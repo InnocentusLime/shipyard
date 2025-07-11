@@ -170,37 +170,6 @@ fn track_reset_with_timestamp() {
 }
 
 #[test]
-fn track() {
-    #[derive(PartialEq, Eq, Debug)]
-    struct USIZE(usize);
-    impl Component for USIZE {
-        type Tracking = track::Untracked;
-    }
-
-    fn system(mut entities: EntitiesViewMut, mut usizes: ViewMut<USIZE, track::All>) {
-        usizes.clear();
-
-        entities.add_entity(&mut usizes, USIZE(1));
-
-        assert_eq!(usizes.deleted().count(), 1);
-    }
-
-    let mut world = World::new();
-    world.borrow::<ViewMut<USIZE>>().unwrap().track_all();
-
-    world.add_entity((USIZE(0),));
-
-    Workload::new("")
-        .with_system(system)
-        .add_to_world(&world)
-        .unwrap();
-
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-}
-
-#[test]
 fn delete_multiple() {
     #[derive(PartialEq, Eq, Debug)]
     struct USIZE(usize);

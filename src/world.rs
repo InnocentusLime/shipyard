@@ -1,5 +1,4 @@
 mod builder;
-mod run_batches;
 
 pub use builder::WorldBuilder;
 
@@ -17,22 +16,17 @@ use crate::iter_component::{into_iter, IntoIterRef, IterComponent};
 use crate::memory_usage::WorldMemoryUsage;
 use crate::r#mut::Mut;
 use crate::reserve::BulkEntityIter;
-use crate::scheduler::info::WorkloadsInfo;
-use crate::scheduler::{AsLabel, Batches, Label, Scheduler};
 use crate::sparse_set::{BulkAddEntity, TupleAddComponent, TupleDelete, TupleRemove};
 use crate::storage::{Storage, StorageId};
 use crate::system::System;
 use crate::tracking::{TrackingTimestamp, TupleTrack};
 use crate::views::EntitiesViewMut;
-use alloc::boxed::Box;
-use alloc::format;
 use alloc::sync::Arc;
 use core::sync::atomic::AtomicU64;
 
 /// `World` contains all data this library will manipulate.
 pub struct World {
     pub(crate) all_storages: AtomicRefCell<AllStorages>,
-    pub(crate) scheduler: AtomicRefCell<Scheduler>,
     counter: Arc<AtomicU64>,
 }
 
@@ -49,7 +43,6 @@ impl Default for World {
                 AllStorages::new(counter.clone()),
                 Arc::new(crate::std_thread_id_generator),
             ),
-            scheduler: AtomicRefCell::new(Default::default()),
             counter,
         }
     }
@@ -615,146 +608,6 @@ let i = world.run(sys1);
             .map_err(error::Run::GetStorage)
             .unwrap()
     }
-    /// Modifies the current default workload to `name`.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (exclusive)
-    ///
-    /// ### Errors
-    ///
-    /// - Scheduler borrow failed.
-    /// - Workload did not exist.
-    pub fn set_default_workload<T>(
-        &self,
-        name: impl AsLabel<T>,
-    ) -> Result<(), error::SetDefaultWorkload> {
-        self.scheduler
-            .borrow_mut()
-            .map_err(|_| error::SetDefaultWorkload::Borrow)?
-            .set_default(name.as_label())
-    }
-    /// Changes the name of a workload if it exists.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (exclusive)
-    ///
-    /// ### Panics
-    ///
-    /// - Scheduler borrow failed.
-    #[track_caller]
-    pub fn rename_workload<T, U>(&self, old_name: impl AsLabel<T>, new_name: impl AsLabel<U>) {
-        let old_label = old_name.as_label();
-        let new_label = new_name.as_label();
-
-        self.scheduler
-            .borrow_mut()
-            .unwrap()
-            .rename(&old_label, Box::new(new_label));
-    }
-    /// Runs the `name` workload.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (shared)
-    /// - Systems' borrow as they are executed
-    ///
-    /// ### Errors
-    ///
-    /// - Scheduler borrow failed.
-    /// - Workload did not exist.
-    /// - Storage borrow failed.
-    /// - User error returned by system.
-    pub fn run_workload<T>(&self, label: impl AsLabel<T>) -> Result<(), error::RunWorkload> {
-        let scheduler = self
-            .scheduler
-            .borrow()
-            .map_err(|_| error::RunWorkload::Scheduler)?;
-
-        let label = label.as_label();
-        let batches = scheduler.workload(&*label)?;
-
-        self.run_batches(
-            &scheduler.systems,
-            &scheduler.system_names,
-            batches,
-            &*label,
-        )
-    }
-    /// Returns `true` if the world contains the `name` workload.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (shared)
-    ///
-    /// ### Panics
-    ///
-    /// - Scheduler borrow failed.
-    ///
-    /// ### Example
-    /// ```
-    /// use shipyard::{Workload, World};
-    ///
-    /// let world = World::new();
-    ///
-    /// Workload::new("foo").add_to_world(&world).unwrap();
-    ///
-    /// assert!(world.contains_workload("foo"));
-    /// assert!(!world.contains_workload("bar"));
-    /// ```
-    #[track_caller]
-    pub fn contains_workload<T>(&self, name: impl AsLabel<T>) -> bool {
-        let label = name.as_label();
-
-        self.scheduler.borrow().unwrap().contains_workload(&*label)
-    }
-    #[allow(clippy::type_complexity)]
-    pub(crate) fn run_batches(
-        &self,
-        systems: &[Box<dyn Fn(&World) -> Result<(), error::Run> + Send + Sync + 'static>],
-        system_names: &[Box<dyn Label>],
-        batches: &Batches,
-        workload_name: &dyn Label,
-    ) -> Result<(), error::RunWorkload> {
-        if let Some(run_if) = &batches.run_if {
-            if !run_if
-                .run(self)
-                .map_err(|err| error::RunWorkload::Run((workload_name.dyn_clone(), err)))?
-            {
-                return Ok(());
-            }
-        }
-        self.run_batches_sequential(systems, system_names, batches, workload_name)
-    }
-    /// Run the default workload if there is one.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (shared)
-    /// - Systems' borrow as they are executed
-    ///
-    /// ### Errors
-    ///
-    /// - Scheduler borrow failed.
-    /// - Storage borrow failed.
-    /// - User error returned by system.
-    pub fn run_default_workload(&self) -> Result<(), error::RunWorkload> {
-        let scheduler = self
-            .scheduler
-            .borrow()
-            .map_err(|_| error::RunWorkload::Scheduler)?;
-
-        if !scheduler.is_empty() {
-            self.run_batches(
-                &scheduler.systems,
-                &scheduler.system_names,
-                scheduler.default_workload(),
-                &scheduler.default,
-            )?
-        }
-        Ok(())
-    }
     /// Returns a `Ref<&AllStorages>`, used to implement custom storages.
     /// To borrow `AllStorages` you should use `borrow` or `run` with `AllStoragesViewMut`.
     ///
@@ -1107,27 +960,6 @@ impl World {
     pub fn memory_usage(&self) -> WorldMemoryUsage<'_> {
         WorldMemoryUsage(self)
     }
-    /// Returns a list of workloads and all information related to them.
-    ///
-    /// ### Borrows
-    ///
-    /// - Scheduler (shared)
-    ///
-    /// ### Panics
-    ///
-    /// - Scheduler borrow failed.
-    #[track_caller]
-    pub fn workloads_info(&self) -> WorkloadsInfo {
-        let scheduler = self.scheduler.borrow().unwrap();
-
-        WorkloadsInfo(
-            scheduler
-                .workloads_info
-                .iter()
-                .map(|(name, workload_info)| (format!("{:?}", name), workload_info.clone()))
-                .collect(),
-        )
-    }
 
     /// Enable insertion tracking for the given components.
     pub fn track_insertion<T: TupleTrack>(&mut self) -> &mut World {
@@ -1479,12 +1311,6 @@ impl core::fmt::Debug for World {
             debug_struct.field(&*all_storages);
         } else {
             debug_struct.field(&"Could not borrow AllStorages");
-        }
-
-        if let Ok(scheduler) = self.scheduler.borrow() {
-            debug_struct.field(&*scheduler);
-        } else {
-            debug_struct.field(&"Could not borrow Scheduler");
         }
 
         debug_struct.finish()

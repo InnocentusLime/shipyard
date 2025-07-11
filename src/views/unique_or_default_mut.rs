@@ -1,13 +1,10 @@
-use crate::all_storages::AllStorages;
 use crate::atomic_refcell::ARef;
-use crate::borrow::{Borrow, BorrowInfo, WorldBorrow};
+use crate::borrow::{Borrow, WorldBorrow};
 use crate::component::Unique;
 use crate::error;
-use crate::scheduler::info::TypeInfo;
 use crate::tracking::TrackingTimestamp;
 use crate::views::UniqueViewMut;
 use crate::world::World;
-use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 
 /// Exclusive view over a unique component storage.
@@ -52,17 +49,5 @@ impl<'v, T: Unique + Default + Send + Sync> WorldBorrow for UniqueOrDefaultViewM
         let view = UniqueViewMut::borrow(all_storages, Some(all_borrow), last_run, current)?;
 
         Ok(UniqueOrDefaultViewMut(view))
-    }
-}
-
-unsafe impl<'v, T: Unique + Default + Send + Sync> BorrowInfo for UniqueOrDefaultViewMut<'v, T> {
-    fn borrow_info(info: &mut Vec<TypeInfo>) {
-        UniqueViewMut::<T>::borrow_info(info);
-    }
-
-    fn enable_tracking(
-        enable_tracking_fn: &mut Vec<fn(&AllStorages) -> Result<(), error::GetStorage>>,
-    ) {
-        UniqueViewMut::<T>::enable_tracking(enable_tracking_fn);
     }
 }

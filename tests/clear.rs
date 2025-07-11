@@ -90,37 +90,3 @@ fn update() {
     );
     assert_eq!(usizes.len(), 0);
 }
-
-#[test]
-fn inserted() {
-    #[derive(PartialEq, Eq, Debug)]
-    struct USIZE(usize);
-    impl Component for USIZE {
-        type Tracking = track::Untracked;
-    }
-
-    fn system(u32s: View<U32>, mut usizes: ViewMut<USIZE, track::All>) {
-        usizes.clear();
-
-        for id in u32s.iter().ids() {
-            usizes.add_component_unchecked(id, USIZE(0));
-        }
-
-        assert_eq!(usizes.inserted().iter().count(), 1);
-    }
-
-    let mut world = World::new();
-
-    world.borrow::<ViewMut<USIZE>>().unwrap().track_all();
-
-    world.add_entity((U32(0),));
-
-    Workload::new("")
-        .with_system(system)
-        .add_to_world(&world)
-        .unwrap();
-
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-}

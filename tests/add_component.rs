@@ -101,55 +101,6 @@ fn no_pack_unchecked() {
 }
 
 #[test]
-fn workload_add() {
-    let mut world = World::new();
-
-    let eid = world.add_entity(());
-
-    world.add_workload(move || {
-        (
-            move |mut vm_u32: ViewMut<U32>| {
-                vm_u32.add_component_unchecked(eid, U32(0));
-            },
-            |v_u32: View<U32, track::InsertionAndModification>| {
-                assert_eq!(v_u32.inserted_or_modified().iter().count(), 1)
-            },
-        )
-            .into_workload()
-    });
-
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-}
-
-#[test]
-fn workload_add_and_remove() {
-    let mut world = World::new();
-
-    let eid = world.add_entity(());
-
-    world.add_workload(move || {
-        (
-            move |mut vm_u32: ViewMut<U32>| {
-                vm_u32.add_component_unchecked(eid, U32(0));
-            },
-            |v_u32: View<U32, track::InsertionAndModification>| {
-                assert_eq!(v_u32.inserted().iter().count(), 1)
-            },
-            move |mut vm_u32: ViewMut<U32>| {
-                vm_u32.remove(eid);
-            },
-        )
-            .into_workload()
-    });
-
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-}
-
-#[test]
 fn move_between_worlds() {
     let mut world1 = World::new();
     let mut world2 = World::new();

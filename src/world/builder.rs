@@ -1,5 +1,4 @@
 use crate::all_storages::{AllStoragesBuilder, LockPresent, ThreadIdPresent};
-use crate::atomic_refcell::AtomicRefCell;
 use crate::public_transport::ShipyardRwLock;
 use crate::world::World;
 use alloc::sync::Arc;
@@ -69,7 +68,6 @@ impl WorldBuilder<LockPresent, ThreadIdPresent> {
 
         World {
             all_storages,
-            scheduler: AtomicRefCell::new(Default::default()),
             counter,
         }
     }

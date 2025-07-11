@@ -1,4 +1,3 @@
-mod borrow_info;
 #[cfg(feature = "thread_local")]
 mod non_send;
 #[cfg(feature = "thread_local")]
@@ -7,7 +6,6 @@ mod non_send_sync;
 mod non_sync;
 mod world_borrow;
 
-pub use borrow_info::BorrowInfo;
 #[cfg(feature = "thread_local")]
 pub use non_send::NonSend;
 #[cfg(feature = "thread_local")]

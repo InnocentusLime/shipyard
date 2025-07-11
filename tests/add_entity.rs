@@ -152,22 +152,3 @@ fn bulk_unequal_length() {
 
     world.delete_entity(entity);
 }
-
-#[test]
-fn workload() {
-    let world = World::new();
-
-    world.add_workload(|| {
-        (
-            |mut entities: EntitiesViewMut, mut vm_u32: ViewMut<U32>| {
-                entities.add_entity(&mut vm_u32, U32(0));
-            },
-            |v_u32: View<U32, track::Insertion>| assert_eq!(v_u32.inserted().iter().count(), 1),
-        )
-            .into_workload()
-    });
-
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-    world.run_default_workload().unwrap();
-}

@@ -75,8 +75,6 @@ mod public_transport;
 mod remove;
 #[allow(missing_docs)]
 pub mod reserve;
-#[allow(missing_docs)]
-pub mod scheduler;
 mod seal;
 /// Default component storage.
 pub mod sparse_set;
@@ -120,11 +118,6 @@ pub use optional::Optional;
 pub use or::{OneOfTwo, Or};
 pub use r#mut::Mut;
 pub use remove::Remove;
-#[doc(inline)]
-pub use scheduler::{
-    IntoWorkload, IntoWorkloadSystem, IntoWorkloadTrySystem, SystemModificator, Workload,
-    WorkloadModificator,
-};
 #[cfg(feature = "proc")]
 pub use shipyard_proc::{Borrow, BorrowInfo, Component, IntoIter, Label, Unique, WorldBorrow};
 pub use storage::{Storage, StorageId};

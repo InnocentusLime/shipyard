@@ -1,13 +1,11 @@
 use crate::all_storages::AllStorages;
 use crate::atomic_refcell::{ARef, SharedBorrow};
-use crate::borrow::{Borrow, BorrowInfo, WorldBorrow};
+use crate::borrow::{Borrow, WorldBorrow};
 use crate::component::Unique;
 use crate::error;
-use crate::scheduler::info::TypeInfo;
 use crate::tracking::TrackingTimestamp;
 use crate::views::UniqueView;
 use crate::world::World;
-use alloc::vec::Vec;
 use core::cell::OnceCell;
 
 /// Shared view over a unique component storage.
@@ -166,17 +164,5 @@ impl<'v, T: Unique + Default + Send + Sync> WorldBorrow for UniqueOrInitView<'v,
             last_run,
             current,
         })
-    }
-}
-
-unsafe impl<'v, T: Unique + Default + Send + Sync> BorrowInfo for UniqueOrInitView<'v, T> {
-    fn borrow_info(info: &mut Vec<TypeInfo>) {
-        UniqueView::<T>::borrow_info(info);
-    }
-
-    fn enable_tracking(
-        enable_tracking_fn: &mut Vec<fn(&AllStorages) -> Result<(), error::GetStorage>>,
-    ) {
-        UniqueView::<T>::enable_tracking(enable_tracking_fn);
     }
 }

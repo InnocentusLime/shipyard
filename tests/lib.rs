@@ -6,7 +6,6 @@ mod derive;
 mod iteration;
 #[cfg(feature = "serde1")]
 mod serde;
-mod workload;
 
 use std::iter::Sum;
 
@@ -67,75 +66,6 @@ fn run() {
             assert!(iter.next().is_none());
         },
     );
-}
-
-#[test]
-fn system() {
-    fn system1((mut usizes, u32s): (ViewMut<USIZE>, View<U32>)) {
-        (&mut usizes, &u32s).iter().for_each(|(x, y)| {
-            x.0 += y.0 as usize;
-        });
-    }
-
-    let world = World::new();
-
-    world.run(
-        |(mut entities, mut usizes, mut u32s): (EntitiesViewMut, ViewMut<USIZE>, ViewMut<U32>)| {
-            entities.add_entity((&mut usizes, &mut u32s), (USIZE(0), U32(1)));
-            entities.add_entity((&mut usizes, &mut u32s), (USIZE(2), U32(3)));
-        },
-    );
-
-    Workload::new("")
-        .with_system(system1)
-        .add_to_world(&world)
-        .unwrap();
-
-    world.run_default_workload().unwrap();
-    world.run(|usizes: View<USIZE>| {
-        let mut iter = usizes.iter();
-        assert_eq!(iter.next(), Some(&USIZE(1)));
-        assert_eq!(iter.next(), Some(&USIZE(5)));
-        assert_eq!(iter.next(), None);
-    });
-}
-
-#[test]
-fn systems() {
-    fn system1((mut usizes, u32s): (ViewMut<USIZE>, View<U32>)) {
-        (&mut usizes, &u32s).iter().for_each(|(x, y)| {
-            x.0 += y.0 as usize;
-        });
-    }
-
-    fn system2(mut usizes: ViewMut<USIZE>) {
-        (&mut usizes,).iter().for_each(|x| {
-            x.0 += 1;
-        });
-    }
-
-    let world = World::new();
-
-    world.run(
-        |(mut entities, mut usizes, mut u32s): (EntitiesViewMut, ViewMut<USIZE>, ViewMut<U32>)| {
-            entities.add_entity((&mut usizes, &mut u32s), (USIZE(0), U32(1)));
-            entities.add_entity((&mut usizes, &mut u32s), (USIZE(2), U32(3)));
-        },
-    );
-
-    Workload::new("")
-        .with_system(system1)
-        .with_system(system2)
-        .add_to_world(&world)
-        .unwrap();
-
-    world.run_default_workload().unwrap();
-    world.run(|usizes: View<USIZE>| {
-        let mut iter = usizes.iter();
-        assert_eq!(iter.next(), Some(&USIZE(2)));
-        assert_eq!(iter.next(), Some(&USIZE(6)));
-        assert_eq!(iter.next(), None);
-    });
 }
 
 #[test]
