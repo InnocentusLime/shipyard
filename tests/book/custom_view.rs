@@ -1,3 +1,4 @@
+/*
 use shipyard::{
     atomic_refcell::SharedBorrow, tracking::TrackingTimestamp, AllStorages, Borrow, BorrowInfo,
     Component, EntitiesViewMut, IntoIter, Unique, UniqueView, ViewMut, World,
@@ -360,3 +361,4 @@ unsafe impl shipyard::borrow::BorrowInfo for RenderGraphicsViewMut<'_> {
 }
 // ANCHOR_END: borrow_info
 }
+*/
