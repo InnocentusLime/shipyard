@@ -12,8 +12,6 @@ mod hierarchy;
 mod iterators;
 #[cfg(feature = "thread_local")]
 mod non_send_sync;
-#[cfg(feature = "parallel")]
-mod parallelism;
 mod remove_components;
 mod run;
 mod sparse_set;

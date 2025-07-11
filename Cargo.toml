@@ -19,7 +19,6 @@ hashbrown = { version = "0.14.0", default-features = false, features = [
     "allocator-api2",
 ] }
 lock_api = "0.4.0"
-rayon = { version = "1.5.1", optional = true }
 serde = { version = "1.0.0", optional = true, default-features = false, features = [
     "derive",
 ] }
@@ -28,9 +27,8 @@ siphasher = "1.0.0"
 tracing = { version = "0.1.0", default-features = false, optional = true }
 
 [features]
-default = ["parallel", "proc", "std"]
+default = ["proc", "std"]
 extended_tuple = []
-parallel = ["rayon", "shipyard_proc/parallel"]
 proc = ["shipyard_proc"]
 serde1 = ["serde", "hashbrown/serde"]
 std = ["hashbrown/ahash"]

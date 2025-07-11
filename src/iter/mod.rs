@@ -2,8 +2,6 @@ mod captain;
 mod into_shiperator;
 mod mixed;
 mod output;
-#[cfg(feature = "parallel")]
-mod parallel;
 mod sailor;
 mod with_id;
 
@@ -13,9 +11,6 @@ pub use captain::ShiperatorCaptain;
 pub use into_shiperator::{IntoIter, IntoShiperator};
 pub use mixed::Mixed;
 pub use output::ShiperatorOutput;
-#[cfg(feature = "parallel")]
-#[cfg_attr(docsrs, doc(cfg(feature = "thread_local")))]
-pub use parallel::ParShiperator;
 pub use sailor::ShiperatorSailor;
 pub use with_id::WithId;
 

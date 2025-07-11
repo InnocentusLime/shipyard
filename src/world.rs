@@ -34,8 +34,6 @@ pub struct World {
     pub(crate) all_storages: AtomicRefCell<AllStorages>,
     pub(crate) scheduler: AtomicRefCell<Scheduler>,
     counter: Arc<AtomicU64>,
-    #[cfg(feature = "parallel")]
-    thread_pool: Option<rayon::ThreadPool>,
 }
 
 #[cfg(feature = "std")]
@@ -53,8 +51,6 @@ impl Default for World {
             ),
             scheduler: AtomicRefCell::new(Default::default()),
             counter,
-            #[cfg(feature = "parallel")]
-            thread_pool: None,
         }
     }
 }
@@ -64,11 +60,6 @@ impl World {
     #[cfg(feature = "std")]
     pub fn new() -> World {
         Default::default()
-    }
-    /// Removes the local [`ThreadPool`](rayon::ThreadPool).
-    #[cfg(feature = "parallel")]
-    pub fn remove_local_thread_pool(&mut self) -> Option<rayon::ThreadPool> {
-        self.thread_pool.take()
     }
     /// Adds a new unique storage, unique storages store a single value.
     /// To access a unique storage value, use [`UniqueView`] or [`UniqueViewMut`].
@@ -734,16 +725,7 @@ let i = world.run(sys1);
                 return Ok(());
             }
         }
-
-        #[cfg(feature = "parallel")]
-        {
-            self.run_batches_parallel(systems, system_names, batches, workload_name)
-        }
-
-        #[cfg(not(feature = "parallel"))]
-        {
-            self.run_batches_sequential(systems, system_names, batches, workload_name)
-        }
+        self.run_batches_sequential(systems, system_names, batches, workload_name)
     }
     /// Run the default workload if there is one.
     ///

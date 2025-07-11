@@ -4,8 +4,6 @@ mod tracking;
 
 use crate::component::Component;
 use crate::entity_id::EntityId;
-#[cfg(feature = "parallel")]
-use crate::iter::ParShiperator;
 use crate::iter::{captain::ShiperatorCaptain, mixed::Mixed, Shiperator};
 use crate::optional::Optional;
 use crate::sparse_set::{FullRawWindow, FullRawWindowMut, RawEntityIdAccess};
@@ -43,31 +41,6 @@ pub trait IntoIter: IntoShiperator {
     /// });
     /// ```
     fn iter(self) -> Shiperator<Self::Shiperator>;
-    /// ### Example
-    /// ```
-    /// use rayon::prelude::ParallelIterator;
-    /// use shipyard::{Component, EntitiesViewMut, IntoIter, ViewMut, World};
-    ///
-    /// #[derive(Component, Clone, Copy)]
-    /// struct U32(u32);
-    ///
-    /// #[derive(Component)]
-    /// struct USIZE(usize);
-    ///
-    /// let world = World::new();
-    ///
-    /// let (mut entities, mut usizes, mut u32s) = world.borrow::<(EntitiesViewMut, ViewMut<USIZE>, ViewMut<U32>)>().unwrap();
-    ///
-    /// entities.add_entity((&mut usizes, &mut u32s), (USIZE(0), U32(1)));
-    /// entities.add_entity((&mut usizes, &mut u32s), (USIZE(2), U32(3)));
-    ///
-    /// (&mut usizes, &u32s).par_iter().for_each(|(mut x, &y)| {
-    ///     x.0 += y.0 as usize;
-    /// });
-    /// ```
-    #[cfg(feature = "parallel")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "parallel")))]
-    fn par_iter(self) -> ParShiperator<Self::Shiperator>;
 }
 
 impl<T: IntoShiperator> IntoIter for T
@@ -87,12 +60,6 @@ where
             start: 0,
             end: len,
         }
-    }
-
-    #[cfg(feature = "parallel")]
-    #[inline]
-    fn par_iter(self) -> ParShiperator<Self::Shiperator> {
-        ParShiperator(self.iter())
     }
 }
 

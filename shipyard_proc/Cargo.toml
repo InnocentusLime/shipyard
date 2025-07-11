@@ -13,7 +13,6 @@ proc-macro = true
 
 [features]
 default = []
-parallel = []
 
 [dependencies]
 proc-macro2 = "1"

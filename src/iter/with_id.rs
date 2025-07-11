@@ -144,23 +144,3 @@ impl<S: ShiperatorCaptain + ShiperatorSailor> DoubleEndedIterator for WithId<Shi
 }
 
 impl<S: ShiperatorCaptain + ShiperatorSailor> FusedIterator for WithId<Shiperator<S>> {}
-
-#[cfg(feature = "parallel")]
-impl<S: ShiperatorCaptain + ShiperatorSailor + Send + Clone>
-    rayon::iter::plumbing::UnindexedProducer for WithId<Shiperator<S>>
-{
-    type Item = (EntityId, S::Out);
-
-    fn split(self) -> (Self, Option<Self>) {
-        let (left, right) = self.0.split();
-
-        (WithId(left), right.map(WithId))
-    }
-
-    fn fold_with<F>(self, folder: F) -> F
-    where
-        F: rayon::iter::plumbing::Folder<Self::Item>,
-    {
-        folder.consume_iter(self)
-    }
-}
